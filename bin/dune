@@ -8,3 +8,8 @@
  (name int_to_float)
  (libraries base hardcaml)
  (modules int_to_float))
+
+(executable
+ (name test)
+ (libraries base hardcaml)
+(modules test))
