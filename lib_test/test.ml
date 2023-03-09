@@ -66,6 +66,39 @@ let priority_encoder_testbench =
           (Bits.to_string expected) (Bits.to_int expected) (Bits.to_string !priority) (Bits.to_int !priority))
     prioirty_cases
 
+let int_to_float_cases =
+  let a_width = 24
+  and b_width = 32 in
+  let make_int_and_float i =
+    Bits.of_int ~width:a_width i, i |> float_of_int |> Int32.bits_of_float |> Bits.of_int32 ~width:b_width
+  in
+  List.concat
+    [
+      List.map make_int_and_float [ 0; -1; 1 ];
+      List.init 100 (fun _ -> make_int_and_float @@ if Random.int 50 > 24 then Random.int 100 else ~-1 * Random.int 100);
+    ]
+
+let int_to_float_testbench =
+  let sim = Cyclesim.create Int_to_ieee_float.int_to_float_inline in
+  let a = Cyclesim.in_port sim "a" in
+  let b = Cyclesim.out_port sim "b" in
+  let open Base in
+  List.iter
+    ~f:(fun (a_, expected) ->
+      a := a_;
+      Cyclesim.reset sim;
+      Cyclesim.cycle sim;
+      match Bits.equal expected !b with
+      | true -> ()
+      | false ->
+        test_failed "for a: %s [%d], expected %s [%f] but got %s [%f]" (Bits.to_string !a) (!a |> Bits.to_sint)
+          (Bits.to_string expected)
+          (expected |> Bits.to_int32 |> Int32.float_of_bits)
+          (Bits.to_string !b)
+          (!b |> Bits.to_int32 |> Int32.float_of_bits))
+    int_to_float_cases
+
 let () =
   adder_testbench;
-  priority_encoder_testbench
+  priority_encoder_testbench;
+  int_to_float_testbench
