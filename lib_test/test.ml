@@ -128,8 +128,8 @@ let int_to_float_testbench =
   let open Base in
   List.iter
     ~f:(fun (a_, expected) ->
-      printf "a:\t%s\t[%d] expecting\t%s\t[%f]...\n" (Bits.to_string a_) (a_ |> Bits.to_sint) (Bits.to_string expected)
-        (expected |> Bits.to_int32 |> Int32.float_of_bits);
+      (* printf "a:\t%s\t[%d] expecting\t%s\t[%f]...\n" (Bits.to_string a_) (a_ |> Bits.to_sint) (Bits.to_string expected) *)
+      (*   (expected |> Bits.to_int32 |> Int32.float_of_bits); *)
       a := a_;
       Cyclesim.reset sim;
       Cyclesim.cycle sim;
