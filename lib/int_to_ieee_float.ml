@@ -17,14 +17,20 @@ let encoder a =
 
 let mantissa a =
   let open Signal in
-  let x = Signal.reverse a in
-  let shift_fwd_pad_back a i =
-    let shift_from = a.:[width a - 1, i + 1] in
-    List.concat [ shift_from |> bits_msb; List.init (width a - 1 - width shift_from) ~f:(fun _ -> Signal.zero 1) ]
-    |> concat_msb
+  let a = Signal.reverse a in
+  let shift_fwd_pad_back i =
+    if i = 0 then drop_top a 1
+    else if i = width a - 1 then Signal.zero 23
+    else (
+      let shift_from = drop_top a (width a - i + 1) in
+      let padding () =
+        let n = width a - 1 - width shift_from in
+        List.init n ~f:(fun _ -> Signal.zero 1)
+      in
+      List.concat [ shift_from |> bits_msb; padding () ] |> concat_msb)
   in
   let cases =
-    List.init (width a - 1) ~f:(fun i : Signal.t Comb.with_valid -> { valid = bit x i; value = shift_fwd_pad_back a i })
+    List.init (width a) ~f:(fun i : Signal.t Comb.with_valid -> { valid = bit a i; value = shift_fwd_pad_back i })
   in
   priority_select_with_default ~default:(Signal.zero 23) cases
 
@@ -39,7 +45,6 @@ let int_to_float =
     let priority = encoder decomped in
     let p () =
       let exponent = priority -:. 1 +:. 127 in
-      (* &: sresize sign (Signal.width priority) *)
       let mantissa = mantissa decomped in
       Signal.concat_msb (List.concat [ [ sign ]; Signal.bits_msb exponent; Signal.bits_msb mantissa ])
     in
