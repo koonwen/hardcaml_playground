@@ -1,4 +1,10 @@
 (executable
  (public_name main)
  (name main)
- (libraries lib base hardcaml))
+ (libraries lib base hardcaml)
+ (modules main))
+
+(executable
+ (name int_to_float)
+ (libraries base hardcaml)
+ (modules int_to_float))

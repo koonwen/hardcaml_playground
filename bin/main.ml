@@ -14,9 +14,9 @@ mux (of_int ~width:1 1) lst |> to_string;;
 select (of_string "110011") 2 0 |> to_string
 
 let simple_circuit =
-  let a = Signal.input "a" 1 in
-  let res = Signal.output "res" a in
-  Circuit.create_exn ~name:"simple" [ res ]
+  let i = Signal.input "I" 1 in
+  let o = Signal.output "O" i in
+Circuit.create_exn ~name:"simple" [ o ];;
 
 (* Addition between two unsigned 4 bit integers *)
 let adder4bit_circuit =
@@ -40,3 +40,4 @@ let priority_select_circuit =
 let () =
   List.iter ~f:(Hardcaml.Rtl.output Vhdl)
     (List.concat [ Adder.circuits; Int_to_ieee_float.circuits; [ priority_select_circuit ] ])
+

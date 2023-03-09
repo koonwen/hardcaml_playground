@@ -2,14 +2,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity priority encoder is
+entity priorityencoder is
     port (
         a : in std_logic_vector (23 downto 0);
         res : out std_logic_vector (4 downto 0)
     );
 end entity;
 
-architecture rtl of priority encoder is
+architecture rtl of priorityencoder is
 
     -- conversion functions
     function hc_uns(a : std_logic)        return unsigned         is variable b : unsigned(0 downto 0); begin b(0) := a; return b; end;
