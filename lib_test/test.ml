@@ -58,6 +58,7 @@ let priority_encoder_testbench =
       a := a_;
       Cyclesim.reset simba;
       Cyclesim.cycle simba;
+      assert (Bits.width !priority = 8);
       match Bits.equal expected !priority with
       | true -> ()
       | false ->
@@ -108,7 +109,7 @@ let de_2_comp_test_bench =
     (de_2_comp_test_cases width)
 
 let int_to_float_testbench =
-  let sim = Cyclesim.create Int_to_ieee_float.int_to_float_inline in
+  let sim = Cyclesim.create Int_to_ieee_float.int_to_float in
   let a = Cyclesim.in_port sim "a" in
   let b = Cyclesim.out_port sim "b" in
   let open Base in
@@ -117,6 +118,7 @@ let int_to_float_testbench =
       a := a_;
       Cyclesim.reset sim;
       Cyclesim.cycle sim;
+      assert (Bits.width !b = 32);
       match Bits.equal expected !b with
       | true -> ()
       | false ->

@@ -32,27 +32,16 @@ let priority_encoder =
   let priority = Signal.output "priority" (encoder (Signal.input "a" 24)) in
   Circuit.create_exn ~name:"priority_encoder" [ priority ]
 
-let int_to_float_base get_priority =
+let int_to_float =
   let to_float a =
     let sign = msb a in
     let decomped = de_2s_comp a in
-    let priority = get_priority decomped in
-    let exponent = (priority +:. 127) *: sign in
+    let priority = encoder decomped in
+    let exponent = priority +:. 127 &: sresize sign (Signal.width priority) in
     let mantissa = mantissa decomped in
     Signal.concat_msb (List.concat [ [ sign ]; Signal.bits_msb exponent; Signal.bits_msb mantissa ])
   in
   let b = Signal.output "b" (to_float (Signal.input "a" 24)) in
   Hardcaml.Circuit.create_exn ~name:"int_to_float" [ b ]
-
-let int_to_float =
-  let get_priority decomped =
-    let encoder =
-      Instantiation.create () ~name:"priority_encoder" ~inputs:[ "a", decomped ] ~outputs:[ "priority", 8 ]
-    in
-    Map.find_exn encoder "priority"
-  in
-  int_to_float_base get_priority
-
-let int_to_float_inline = int_to_float_base encoder
 
 let circuits = [ priority_encoder; int_to_float ]
