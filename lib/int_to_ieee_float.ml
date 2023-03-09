@@ -19,11 +19,11 @@ let priority_encoder =
   let priority = Signal.output "priority" (encoder (Signal.input "a" 24)) in
   Circuit.create_exn ~name:"priority_encoder" [ priority ]
 
-let int_to_float_base get_exponent =
+let int_to_float_base get_priority =
   let to_float a =
     let sign = msb a in
     let decomped = de_2s_comp a in
-    let exponent = get_exponent decomped in
+    let exponent = (get_priority decomped +:. 127) *: sign in
     let mantisa_untrunc = List.mapi ~f:(fun i s -> uresize (exponent >:. i) 1 &: s) (Signal.bits_msb decomped) in
     let mantisa =
       match List.drop_last mantisa_untrunc with
@@ -36,14 +36,14 @@ let int_to_float_base get_exponent =
   Hardcaml.Circuit.create_exn ~name:"int_to_float" [ b ]
 
 let int_to_float =
-  let get_exponent decomped =
+  let get_priority decomped =
     let encoder =
       Instantiation.create () ~name:"priority_encoder" ~inputs:[ "a", decomped ] ~outputs:[ "priority", 8 ]
     in
-    Map.find_exn encoder "priority" -:. 127
+    Map.find_exn encoder "priority"
   in
-  int_to_float_base get_exponent
+  int_to_float_base get_priority
 
-let int_to_float_inline = int_to_float_base (fun x -> encoder x -:. 127)
+let int_to_float_inline = int_to_float_base encoder
 
 let circuits = [ priority_encoder; int_to_float ]
