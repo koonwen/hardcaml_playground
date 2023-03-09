@@ -1,4 +1,5 @@
 [@@@warning "-32"]
+open Lib
 open Base
 open Hardcaml
 open Signal
@@ -8,14 +9,14 @@ open Signal
 
 let x = of_string "101"
 let y = of_string "010"
-let lst = [x; y];;
+let lst = [ x; y ];;
 mux (of_int ~width:1 1) lst |> to_string;;
-select (of_string "110011") 2 0 |> to_string;;
+select (of_string "110011") 2 0 |> to_string
 
 let simple_circuit =
   let a = Signal.input "a" 1 in
   let res = Signal.output "res" a in
-Circuit.create_exn ~name:"simple" [ res ];;
+  Circuit.create_exn ~name:"simple" [ res ]
 
 (* Addition between two unsigned 4 bit integers *)
 let adder4bit_circuit =
@@ -24,16 +25,18 @@ let adder4bit_circuit =
   let a = Signal.input "a" 4 in
   let b = Signal.input "b" 4 in
   let res = Signal.output "res" (a +: b) in
-Circuit.create_exn ~name:"4bitadder" [ res ];;
+  Circuit.create_exn ~name:"4bitadder" [ res ]
 
 let priority_select_circuit =
   let a = Signal.input "a" 24 in
-  let cases = List.init 24
-      ~f:(fun i -> {valid = bit a i; value = of_int ~width:5 i }
-                   : int ->  (t,t) Comb.with_valid2) |> List.rev in
+  let cases =
+    List.init 24 ~f:(fun i -> { valid = bit a i; value = of_int ~width:5 i } : int -> (t, t) Comb.with_valid2)
+    |> List.rev
+  in
   let encoder = priority_select_with_default ~default:(of_string "00000") cases in
   let res = Signal.output "res" encoder in
-  Circuit.create_exn ~name:"priority encoder" [res]
+  Circuit.create_exn ~name:"priorityEncoder" [ res ]
 
-let () = 
-Rtl.output ~output_mode:(To_file "design.vhdl") Vhdl priority_select_circuit
+let () =
+  List.iter ~f:(Hardcaml.Rtl.output Vhdl)
+    (List.concat [ Adder.circuits; Int_to_ieee_float.circuits; [ priority_select_circuit ] ])
