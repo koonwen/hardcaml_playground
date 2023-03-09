@@ -19,13 +19,17 @@ let priority_encoder i24sm =
                    : int ->  (t,t) Comb.with_valid2) |> List.rev in
   priority_select_with_default ~default:(zero 8) cases
 
+let mantissa sel magnitude =
+  let lst = List.init 4 ~f:(fun i -> sll magnitude i) in
+  mux sel lst
+
 let itof =
   let int24 = input "I" 24 in
   let int24sm = int24 |> int24_to_int24sm in
   let position = priority_encoder int24sm in
-  let sign = msb int24sm in
+  let sign, magnitude = split_in_half_msb int24sm in
   let exponent = (of_int ~width:8 127) +: position in
-  let fraction = sll int24sm 1 in
+  let fraction = mantissa position magnitude in
   let ieee_float = output "O" (concat_msb [sign; exponent; fraction]) in
   Circuit.create_exn ~name:"itof" [ ieee_float ]
 
