@@ -5,13 +5,15 @@ let printf = Printf.printf
 
 open Base
 
+let de_2s_comp a = mux2 (msb a) (List.map ~f:Signal.( ~: ) (bits_msb (a -:. 1)) |> Signal.concat_msb) a
+
 let encoder a =
+  let a = Signal.reverse a in
   let cases =
-    List.init (width a) ~f:(fun i : Signal.t Comb.with_valid -> { valid = bit a i; value = of_int ~width:8 i })
+    List.init (width a) ~f:(fun i : Signal.t Comb.with_valid ->
+      { valid = bit a i; value = of_int ~width:8 (width a - i - 1) })
   in
   priority_select_with_default ~default:(Signal.zero 8) cases
-
-let de_2s_comp a = mux2 (msb a) (List.map ~f:Signal.( ~: ) (bits_msb (a -:. 1)) |> Signal.concat_msb) a
 
 let priority_encoder =
   let priority = Signal.output "priority" (encoder (Signal.input "a" 24)) in
@@ -22,9 +24,9 @@ let int_to_float_base get_exponent =
     let sign = msb a in
     let decomped = de_2s_comp a in
     let exponent = get_exponent decomped in
-    (* let mantisa_untrunc = List.mapi ~f:(fun i s -> uresize (exponent >:. i) 1 &: s) (Signal.bits_msb decomped) in *)
+    let mantisa_untrunc = List.mapi ~f:(fun i s -> uresize (exponent >:. i) 1 &: s) (Signal.bits_msb decomped) in
     let mantisa =
-      match List.drop_last @@ Signal.bits_msb decomped with
+      match List.drop_last mantisa_untrunc with
       | None -> []
       | Some mantisa -> mantisa
     in
@@ -38,10 +40,10 @@ let int_to_float =
     let encoder =
       Instantiation.create () ~name:"priority_encoder" ~inputs:[ "a", decomped ] ~outputs:[ "priority", 8 ]
     in
-    Map.find_exn encoder "priority"
+    Map.find_exn encoder "priority" -:. 127
   in
   int_to_float_base get_exponent
 
-let int_to_float_inline = int_to_float_base encoder
+let int_to_float_inline = int_to_float_base (fun x -> encoder x -:. 127)
 
 let circuits = [ priority_encoder; int_to_float ]

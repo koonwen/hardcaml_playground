@@ -28,43 +28,43 @@ let adder_testbench =
           (Bits.to_string expected) (Bits.to_string !c))
     adder_cases
 
-let prioirty_cases =
+let priority_cases =
   let priority_width = 8 in
   let input_width = 24 in
   let create_case i =
     let open Base in
     let i_inv = input_width - i - 1 in
-    let i = i in
     let signal = Bits.random ~width:input_width |> Bits.to_string |> Signal.of_string in
     let zeroed_leading =
       signal
-      |> Signal.bits_msb
-      |> List.mapi ~f:(fun inner s -> if i < inner then Signal.gnd else if i = inner then Signal.vdd else s)
-      |> Signal.concat_msb
+      |> Signal.bits_lsb
+      |> List.mapi ~f:(fun inner s -> if inner < i_inv then s else if i_inv = inner then Signal.vdd else Signal.gnd)
+      |> Signal.concat_lsb
       |> Signal.to_bstr
       |> Bits.of_string
     in
     Bits.of_int ~width:priority_width i_inv, zeroed_leading
   in
   let open Base in
-  List.init input_width ~f:create_case
+  List.concat [ List.init input_width ~f:create_case ]
 
 let priority_encoder_testbench =
-  let sim = Cyclesim.create Int_to_ieee_float.priority_encoder in
-  let a = Cyclesim.in_port sim "a" in
-  let priority = Cyclesim.out_port sim "priority" in
+  let simba = Cyclesim.create Int_to_ieee_float.priority_encoder in
+  let a = Cyclesim.in_port simba "a" in
+  let priority = Cyclesim.out_port simba "priority" in
   let open Base in
   List.iter
     ~f:(fun (expected, a_) ->
       a := a_;
-      Cyclesim.reset sim;
-      Cyclesim.cycle sim;
+      Cyclesim.reset simba;
+      Cyclesim.cycle simba;
       match Bits.equal expected !priority with
       | true -> ()
       | false ->
-        test_failed "for a: %s [%d], expected %s [%d] but got %s [%d]" (Bits.to_string !a) (Bits.to_int !a)
-          (Bits.to_string expected) (Bits.to_int expected) (Bits.to_string !priority) (Bits.to_int !priority))
-    prioirty_cases
+        test_failed "priority encoder for a: %s [%d], expected %s [%d] but got %s [%d]" (Bits.to_string !a)
+          (Bits.to_int !a) (Bits.to_string expected) (Bits.to_int expected) (Bits.to_string !priority)
+          (Bits.to_int !priority))
+    priority_cases
 
 let int_to_float_cases =
   let a_width = 24
@@ -100,7 +100,7 @@ let de_2_comp_test_bench =
       Cyclesim.reset sim;
       Cyclesim.cycle sim;
       let got = !b |> Bits.to_sint in
-      match abs expected = abs got with
+      match abs expected = got with
       | true -> ()
       | false ->
         test_failed "for a: %s [%d], expected %d but got %s [%d]" (Bits.to_string !a) (!a |> Bits.to_sint) expected
@@ -120,8 +120,8 @@ let int_to_float_testbench =
       match Bits.equal expected !b with
       | true -> ()
       | false ->
-        test_failed "for a: %s [%d], expected %s [%f] but got %s [%f]" (Bits.to_string !a) (!a |> Bits.to_sint)
-          (Bits.to_string expected)
+        test_failed "int_to_float for a: %s [%d], expected %s [%f] but got %s [%f]" (Bits.to_string !a)
+          (!a |> Bits.to_sint) (Bits.to_string expected)
           (expected |> Bits.to_int32 |> Int32.float_of_bits)
           (Bits.to_string !b)
           (!b |> Bits.to_int32 |> Int32.float_of_bits))
