@@ -1,4 +1,4 @@
 (executable
- (public_name hardcaml)
+ (public_name main)
  (name main)
- (libraries hardcaml))
+ (libraries base hardcaml))

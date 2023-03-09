@@ -1,8 +1,7 @@
+[@@@warning "-32"]
 open Base
 open Hardcaml
 open Signal
-
-
 
 (* to_int interprets a value as an unsigned integer value *)
 (* to_sint will treat the value as a signed, two's complement integer *)
@@ -36,4 +35,5 @@ let priority_select_circuit =
   let res = Signal.output "res" encoder in
   Circuit.create_exn ~name:"priority encoder" [res]
 
-let () = Rtl.print Vhdl priority_select_circuit; Caml.flush_all ();;
+let () = 
+Rtl.output ~output_mode:(To_file "design.vhdl") Vhdl priority_select_circuit
