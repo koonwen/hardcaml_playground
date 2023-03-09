@@ -1,5 +1,8 @@
 open Hardcaml
 open Hardcaml.Signal
+
+let printf = Printf.printf
+
 open Base
 
 let encoder a =
@@ -8,6 +11,8 @@ let encoder a =
   in
   priority_select_with_default ~default:(Signal.zero 8) cases
 
+let de_2s_comp a = mux2 (msb a) (List.map ~f:Signal.negate (bits_msb (a -:. 1)) |> Signal.concat_msb) a
+
 let priority_encoder =
   let priority = Signal.output "priority" (encoder (Signal.input "a" 24)) in
   Circuit.create_exn ~name:"priority_encoder" [ priority ]
@@ -15,11 +20,11 @@ let priority_encoder =
 let int_to_float_base get_exponent =
   let to_float a =
     let sign = msb a in
-    let decomped = mux2 sign (Signal.concat_msb (List.map ~f:negate (bits_msb a)) +: of_int ~width:(width a) 1) a in
+    let decomped = de_2s_comp a in
     let exponent = get_exponent decomped in
-    let mantisa_untrunc = List.mapi ~f:(fun i s -> uresize (exponent >:. i) 1 &: s) (Signal.bits_msb decomped) in
+    (* let mantisa_untrunc = List.mapi ~f:(fun i s -> uresize (exponent >:. i) 1 &: s) (Signal.bits_msb decomped) in *)
     let mantisa =
-      match List.drop_last mantisa_untrunc with
+      match List.drop_last @@ Signal.bits_msb decomped with
       | None -> []
       | Some mantisa -> mantisa
     in

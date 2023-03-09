@@ -78,6 +78,35 @@ let int_to_float_cases =
       List.init 100 (fun _ -> make_int_and_float @@ if Random.int 50 > 24 then Random.int 100 else ~-1 * Random.int 100);
     ]
 
+let de_2_comp_test_cases width =
+  let make_2_comp i = i, Bits.of_int ~width i in
+  List.concat
+    [
+      List.map make_2_comp [ -1; 0; 1 ];
+      List.init 100 (fun _ -> make_2_comp @@ if Random.int 50 > 24 then Random.int 100 else ~-1 * Random.int 100);
+    ]
+
+let de_2_comp_test_bench =
+  let width = 24 in
+  let b = Signal.output "b" (Int_to_ieee_float.de_2s_comp (Signal.input "a" width)) in
+  let circ = Circuit.create_exn ~name:"de_2s_comp" [ b ] in
+  let sim = Cyclesim.create circ in
+  let a = Cyclesim.in_port sim "a" in
+  let b = Cyclesim.out_port sim "b" in
+  let open Base in
+  List.iter
+    ~f:(fun (expected, a_) ->
+      a := a_;
+      Cyclesim.reset sim;
+      Cyclesim.cycle sim;
+      let got = !b |> Bits.to_sint in
+      match abs expected = abs got with
+      | true -> ()
+      | false ->
+        test_failed "for a: %s [%d], expected %d but got %s [%d]" (Bits.to_string !a) (!a |> Bits.to_sint) expected
+          (Bits.to_string !b) got)
+    (de_2_comp_test_cases width)
+
 let int_to_float_testbench =
   let sim = Cyclesim.create Int_to_ieee_float.int_to_float_inline in
   let a = Cyclesim.in_port sim "a" in
@@ -101,4 +130,5 @@ let int_to_float_testbench =
 let () =
   adder_testbench;
   priority_encoder_testbench;
+  de_2_comp_test_bench;
   int_to_float_testbench
