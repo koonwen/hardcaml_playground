@@ -20,7 +20,7 @@ let priority_encoder i24sm =
   priority_select_with_default ~default:(zero 8) cases
 
 let mantissa sel magnitude =
-  let lst = List.init 4 ~f:(fun i -> sll magnitude i) in
+  let lst = List.init 24 ~f:(fun i -> sll magnitude i) in
   mux sel lst
 
 let itof =
