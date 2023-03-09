@@ -1,10 +1,15 @@
 open Lib
 open Hardcaml
 
-exception Test_failed of string
-let test_failed fmt = Printf.ksprintf (fun e -> raise (Test_failed e)) fmt
+let printf = Printf.printf
 
-(* let printf = Printf.printf *)
+exception Test_failed of string
+let test_failed fmt =
+  Printf.ksprintf
+    (fun e ->
+      printf "%s" e;
+      raise (Test_failed e))
+    fmt
 
 let adder_cases = [ 0, 0, 0; 0, 1, 1; 1, 0, 1; 1, 1, 0 ]
 
@@ -43,10 +48,18 @@ let priority_cases =
       |> Signal.to_bstr
       |> Bits.of_string
     in
-    Bits.of_int ~width:priority_width i_inv, zeroed_leading
+    Bits.of_int ~width:priority_width (i_inv + 1), zeroed_leading
   in
   let open Base in
-  List.concat [ List.init input_width ~f:create_case ]
+  List.concat
+    [
+      [
+        Bits.of_int ~width:priority_width 0, Bits.zero input_width;
+        ( Bits.of_int ~width:priority_width 1,
+          Bits.concat_lsb (Bits.one 1 :: (Bits.bits_lsb @@ Bits.zero (input_width - 1))) );
+      ];
+      List.init input_width ~f:create_case;
+    ]
 
 let priority_encoder_testbench =
   let simba = Cyclesim.create Int_to_ieee_float.priority_encoder in
@@ -115,6 +128,8 @@ let int_to_float_testbench =
   let open Base in
   List.iter
     ~f:(fun (a_, expected) ->
+      printf "a:\t%s\t[%d] expecting\t%s\t[%f]...\n" (Bits.to_string a_) (a_ |> Bits.to_sint) (Bits.to_string expected)
+        (expected |> Bits.to_int32 |> Int32.float_of_bits);
       a := a_;
       Cyclesim.reset sim;
       Cyclesim.cycle sim;
@@ -122,7 +137,7 @@ let int_to_float_testbench =
       match Bits.equal expected !b with
       | true -> ()
       | false ->
-        test_failed "int_to_float for a: %s [%d], expected %s [%f] but got %s [%f]" (Bits.to_string !a)
+        test_failed "int_to_float for a: %s [%d],\nexpected\t%s\t[%f]\nbut got    \t%s\t[%f]\n" (Bits.to_string !a)
           (!a |> Bits.to_sint) (Bits.to_string expected)
           (expected |> Bits.to_int32 |> Int32.float_of_bits)
           (Bits.to_string !b)

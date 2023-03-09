@@ -11,7 +11,7 @@ let encoder a =
   let a = Signal.reverse a in
   let cases =
     List.init (width a) ~f:(fun i : Signal.t Comb.with_valid ->
-      { valid = bit a i; value = of_int ~width:8 (width a - i - 1) })
+      { valid = bit a i; value = of_int ~width:8 (width a - i) })
   in
   priority_select_with_default ~default:(Signal.zero 8) cases
 
@@ -37,9 +37,13 @@ let int_to_float =
     let sign = msb a in
     let decomped = de_2s_comp a in
     let priority = encoder decomped in
-    let exponent = priority +:. 127 &: sresize sign (Signal.width priority) in
-    let mantissa = mantissa decomped in
-    Signal.concat_msb (List.concat [ [ sign ]; Signal.bits_msb exponent; Signal.bits_msb mantissa ])
+    let p () =
+      let exponent = priority -:. 1 +:. 127 in
+      (* &: sresize sign (Signal.width priority) *)
+      let mantissa = mantissa decomped in
+      Signal.concat_msb (List.concat [ [ sign ]; Signal.bits_msb exponent; Signal.bits_msb mantissa ])
+    in
+    mux2 (uresize (priority ==:. 0) 1) (Signal.zero 32) (p ())
   in
   let b = Signal.output "b" (to_float (Signal.input "a" 24)) in
   Hardcaml.Circuit.create_exn ~name:"int_to_float" [ b ]
