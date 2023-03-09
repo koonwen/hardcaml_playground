@@ -19,8 +19,7 @@ let mantissa a =
   let open Signal in
   let x = Signal.reverse a in
   let shift_fwd_pad_back i =
-    if i = 0 then drop_bottom a 1
-    else if i = width a - 1 then Signal.zero 23
+    if i = width a - 1 then Signal.zero 23
     else (
       let shift_from = drop_top a (i + 1) in
       let padding () =
