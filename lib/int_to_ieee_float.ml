@@ -15,6 +15,19 @@ let encoder a =
   in
   priority_select_with_default ~default:(Signal.zero 8) cases
 
+let mantissa a =
+  let open Signal in
+  let x = Signal.reverse a in
+  let shift_fwd_pad_back a i =
+    let shift_from = a.:[width a - 1, i + 1] in
+    List.concat [ shift_from |> bits_msb; List.init (width a - 1 - width shift_from) ~f:(fun _ -> Signal.zero 1) ]
+    |> concat_msb
+  in
+  let cases =
+    List.init (width a - 1) ~f:(fun i : Signal.t Comb.with_valid -> { valid = bit x i; value = shift_fwd_pad_back a i })
+  in
+  priority_select_with_default ~default:(Signal.zero 23) cases
+
 let priority_encoder =
   let priority = Signal.output "priority" (encoder (Signal.input "a" 24)) in
   Circuit.create_exn ~name:"priority_encoder" [ priority ]
@@ -23,14 +36,10 @@ let int_to_float_base get_priority =
   let to_float a =
     let sign = msb a in
     let decomped = de_2s_comp a in
-    let exponent = (get_priority decomped +:. 127) *: sign in
-    let mantisa_untrunc = List.mapi ~f:(fun i s -> uresize (exponent >:. i) 1 &: s) (Signal.bits_msb decomped) in
-    let mantisa =
-      match List.drop_last mantisa_untrunc with
-      | None -> []
-      | Some mantisa -> mantisa
-    in
-    Signal.concat_msb (List.concat [ [ sign ]; Signal.bits_msb exponent; mantisa ])
+    let priority = get_priority decomped in
+    let exponent = (priority +:. 127) *: sign in
+    let mantissa = mantissa decomped in
+    Signal.concat_msb (List.concat [ [ sign ]; Signal.bits_msb exponent; Signal.bits_msb mantissa ])
   in
   let b = Signal.output "b" (to_float (Signal.input "a" 24)) in
   Hardcaml.Circuit.create_exn ~name:"int_to_float" [ b ]
