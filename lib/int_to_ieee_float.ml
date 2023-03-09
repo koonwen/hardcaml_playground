@@ -10,14 +10,14 @@ let priority_encoder =
     priority_select_with_default ~default:(Signal.zero 8) cases
   in
   let priority = Signal.output "priority" (encoder (Signal.input "a" 24)) in
-  Circuit.create_exn ~name:"priorityEncoder" [ priority ]
+  Circuit.create_exn ~name:"priority_encoder" [ priority ]
 
 let int_to_float =
   let to_float a =
     let sign = msb a in
     let decomped = mux2 sign (Signal.concat_msb (List.map ~f:( ~: ) (bits_msb a)) +: of_int ~width:(width a) 1) a in
     let encoder =
-      Instantiation.create () ~name:"priorityEncoder" ~inputs:[ "a", decomped ] ~outputs:[ "priority", 8 ]
+      Instantiation.create () ~name:"priority_encoder" ~inputs:[ "a", decomped ] ~outputs:[ "priority", 8 ]
     in
     let exponent = Map.find_exn encoder "priority" in
     let mantisa = List.mapi ~f:(fun i s -> exponent >:. i &: s) (Signal.bits_msb decomped) in

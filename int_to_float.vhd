@@ -321,7 +321,7 @@ begin
     with to_integer(hc_uns(hc_4)) select hc_56 <= 
         a when 0,
         hc_55 when others;
-    the_priorityEncoder: entity work.priorityEncoder (rtl)
+    the_priority_encoder: entity work.priority_encoder (rtl)
         port map ( a => hc_56, priority => hc_58(7 downto 0) );
     hc_1 <= hc_58;
     hc_59 <= hc_sl(hc_1(7 downto 7));

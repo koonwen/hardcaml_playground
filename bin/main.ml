@@ -35,7 +35,7 @@ let priority_select_circuit =
   in
   let encoder = priority_select_with_default ~default:(of_string "00000") cases in
   let res = Signal.output "res" encoder in
-  Circuit.create_exn ~name:"priorityEncoder" [ res ]
+  Circuit.create_exn ~name:"priority_encoder_other" [ res ]
 
 let () =
   List.iter ~f:(Hardcaml.Rtl.output Vhdl)
