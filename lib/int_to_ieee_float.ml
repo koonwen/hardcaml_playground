@@ -18,9 +18,7 @@ let encoder a =
 let mantissa a =
   let open Signal in
   let x = Signal.reverse a in
-  let shift_fwd_pad_back i =
-    if i = width a - 1 then Signal.zero 23 else Signal.uresize (Signal.srl (Signal.sll a (i + 1)) 1) 23
-  in
+  let shift_fwd_pad_back i = if i = width a - 1 then Signal.zero 23 else Signal.drop_bottom (Signal.sll a (i + 1)) 1 in
   let cases =
     List.init (width a) ~f:(fun i : Signal.t Comb.with_valid -> { valid = bit x i; value = shift_fwd_pad_back i })
   in
