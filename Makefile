@@ -7,6 +7,10 @@ test:
 watch:
 	dune build --watch
 
+watch-lib:
+	dune build lib --watch
+
+
 fmt:
 	dune build --auto-promote @fmt
 
